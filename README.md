@@ -27,7 +27,17 @@ How to use a simple `dataclass` definition with `Arrowbic`:
 import arrowbic
 import pyarrow as pa
 import pyarrow.parquet as pq
+
 from dataclasses import dataclass
+from enum import IntEnum
+
+
+@arrowbic.register_item_pyclass
+class ItemType(IntEnum):
+    Unknown = 0
+    Valid = 1
+    Invalid = 2
+
 
 @arrowbic.register_item_pyclass
 @dataclass
@@ -35,17 +45,22 @@ class DataItem:
     name: str
     size: int
     price: float
+    type: ItemType = ItemType.Unknown
 
 # Create an Arrow array from a list of objects.
 arr = arrowbic.array([DataItem("stock", idx, idx * 0.1) for idx in range(5)])
 
 # Access individual Arrow columns directly.
-print(arr.size)
+print(arr.size, arr.price)
 
 # Use PyArrow ops for sorting, filtering, ...
 mask = np.array([True, False, True, False, False])
 arr_filtered = arr.filter(mask)
 arr_sorted = arr.sort(["price"])
+
+# Replace a column with new values.
+# NOTE: new Arrow array generated, as by convention the former are always immutable.
+arr_updated = arr.replace(size=[1, 2, 3, 4, 5])
 
 # Use PyArrow serialization in Parquet.
 t = pa.table({"data": arr})
@@ -67,4 +82,4 @@ The library can be extended by users to support additional specific types (see t
 
 ## Technical design
 
-*Arrowbic* is built on top of [PyArrow extension types](https://arrow.apache.org/docs/python/extending_types.html). Every supported Python type is implemented a custom extension type register in *PyArrow* (and *Arrowbic*). We refer to the design page for more information on the standard extension type interface defined in *Arrowbic*.
+*Arrowbic* is built on top of [PyArrow extension types](https://arrow.apache.org/docs/python/extending_types.html). Every supported Python type is implemented a custom extension type register in *PyArrow* (and *Arrowbic*). We refer to the [design page](docs/design.md) for more information on the standard extension type interface defined in *Arrowbic*.
