@@ -3,7 +3,7 @@
 <!-- ![CI](https://github.com/balancap/arrowbic/workflows/Run%20tests/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/balancap/arrowbic/branch/main/graph/badge.svg)](https://codecov.io/gh/balancap/arrowbic) -->
 
-Pythonic [Apache Arrow](https://arrow.apache.org/)
+**Pythonic [Apache Arrow](https://arrow.apache.org/)**
 
 Apache Arrow is an increasingly adopted standard for columnar memory format (and serialization in Parquet, Features, ... formats). *Arrowbic* is allowing you to write efficient data applications, in a Pythonic way, while being backed by Arrow memory layout and optimized operations.
 
