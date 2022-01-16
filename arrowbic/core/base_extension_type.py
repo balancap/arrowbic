@@ -6,21 +6,16 @@ from typing import Any, Dict, Iterator, Optional, Type
 import pyarrow as pa
 
 
-def make_extension_name(
-    extension_basename: str, module_name: str, item_pyclass_name: Optional[str]
-) -> str:
+def make_extension_name(extension_basename: str, package_name: str) -> str:
     """Make a full Arrowbic extension name.
 
     Args:
         extension_basename: Extension basename.
-        module_name: Module name.
-        item_pyclass_name: Optional Python item class name.
+        package_name: Package name.
     Returns:
         Extension fullname.
     """
-    extension_name = f"arrowbic.{module_name}.{extension_basename}"
-    if item_pyclass_name is not None and len(item_pyclass_name) > 0:
-        extension_name += f".{item_pyclass_name}"
+    extension_name = f"arrowbic.{package_name}.{extension_basename}"
     return extension_name
 
 
@@ -38,44 +33,55 @@ class BaseExtensionType(pa.ExtensionType):
     Args:
         storage_type: Storage type to use for this instance.
         item_pyclass: Item Python class to associate with the extension type.
-        extension_name: Base extension name.
-        module_name: (Optional) module of the extension. `core` by default. Helps avoiding name collision.
+        package_name: (Optional) package of the extension. `core` by default. Helps avoiding name collision.
     """
 
     def __init__(
         self,
-        storage_type: pa.DataType,
+        storage_type: Optional[pa.DataType],
         item_pyclass: Optional[Type[Any]],
-        extension_basename: str,
-        module_name: Optional[str] = None,
+        package_name: Optional[str] = None,
     ):
-        self._extension_basename: str = extension_basename
-        self._module_name: str = module_name or "core"
+        self._package_name: str = package_name or "core"
         self._item_pyclass = item_pyclass
 
         # Generate the full extension name for PyArrow extension registry.
-        self._item_pyclass_name = (
-            item_pyclass.__name__ if item_pyclass is not None else None
-        )
         extension_name = make_extension_name(
-            self._extension_basename, self._module_name, self._item_pyclass_name
+            self.extension_basename, self._package_name
         )
+        storage_type = storage_type or pa.null()
         pa.ExtensionType.__init__(self, storage_type, extension_name)
+
+    @property
+    def extension_name(self) -> str:
+        """Get the extension full name."""
+        return super().extension_name
 
     @property
     def extension_basename(self) -> str:
         """Get the extension base name (i.e. casual name)."""
-        return self._extension_basename
+        return self.__arrowbic_ext_basename__()
 
     @property
-    def module_name(self) -> str:
-        """Get the module name used for the full extension name."""
-        return self._module_name
+    def package_name(self) -> str:
+        """Get the package name used for the full extension name."""
+        return self._package_name
 
     @property
     def item_pyclass(self) -> Optional[Type[Any]]:
-        """Get the item Python class associated with the extension type."""
+        """Get the item Python class associated with the extension type.
+
+        None if the extension type instance is a root instance.
+        """
         return self._item_pyclass
+
+    @property
+    def item_pyclass_name(self) -> Optional[str]:
+        """Get the item Python class name. None if no item class."""
+        item_pyclass_name = (
+            self._item_pyclass.__name__ if self._item_pyclass is not None else None
+        )
+        return item_pyclass_name
 
     def __arrowbic_ext_metadata__(self) -> Dict[str, Any]:
         """Base extension metadata. This is the minimal metadata information stored
@@ -85,11 +91,16 @@ class BaseExtensionType(pa.ExtensionType):
             Extension type metadata dictionary.
         """
         metadata = {
-            "extension_basename": self._extension_basename,
-            "module_name": self._module_name,
-            "item_pyclass_name": self._item_pyclass_name,
+            "extension_basename": self.extension_basename,
+            "package_name": self.package_name,
+            "item_pyclass_name": self.item_pyclass_name,
         }
         return metadata
+
+    @classmethod
+    def __arrowbic_ext_basename__(self) -> str:
+        """Defines the standard basename of the extension type class."""
+        raise NotImplementedError()
 
     @classmethod
     def __arrowbic_priority__(cls) -> int:
@@ -138,6 +149,7 @@ class BaseExtensionType(pa.ExtensionType):
         """
         raise NotImplementedError()
 
+    # PyArrow extension interface, implemented using Arrowbic methods.
     def __arrow_ext_serialize__(self) -> bytes:
         """Standard Arrow(bic) serialization of the extension type metadata.
 

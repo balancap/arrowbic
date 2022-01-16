@@ -10,39 +10,40 @@ class DummyData:
     pass
 
 
-def test__make_extension_name__with_item_pyclass__proper_result():
-    name = make_extension_name("MyExtension", "module", "DummyData")
-    assert name == "arrowbic.module.MyExtension.DummyData"
+class DummyExtensionType(BaseExtensionType):
+    @classmethod
+    def __arrowbic_ext_basename__(cls) -> str:
+        return "DummyExtType"
 
 
-def test__make_extension_name__without_item_pyclass__proper_result():
-    name = make_extension_name("MyExtension", "module", None)
-    assert name == "arrowbic.module.MyExtension"
+def test__make_extension_name__proper_result():
+    name = make_extension_name("MyExtension", "package")
+    assert name == "arrowbic.package.MyExtension"
 
 
 class TestBaseExtensionType(unittest.TestCase):
     def test__base_extension_type__init__proper_properties_set(self):
-        ext_type = BaseExtensionType(pa.float32(), DummyData, "MyExtension", "MyModule")
-        assert ext_type.extension_name == "arrowbic.MyModule.MyExtension.DummyData"
-        assert ext_type.extension_basename == "MyExtension"
-        assert ext_type.module_name == "MyModule"
+        ext_type = DummyExtensionType(pa.float32(), DummyData, "MyPackage")
+        assert ext_type.extension_name == "arrowbic.MyPackage.DummyExtType"
+        assert ext_type.extension_basename == "DummyExtType"
+        assert ext_type.package_name == "MyPackage"
         assert ext_type.item_pyclass is DummyData
 
-    def test__base_extension_type__init__default_module_name(self):
-        ext_type = BaseExtensionType(pa.float32(), DummyData, "MyExtension")
-        assert ext_type.module_name == "core"
+    def test__base_extension_type__init__default_package_name(self):
+        ext_type = DummyExtensionType(pa.float32(), DummyData)
+        assert ext_type.package_name == "core"
 
     def test__base_extension_type__arrowbic_ext_metadata__proper_result(self):
-        ext_type = BaseExtensionType(pa.float32(), DummyData, "MyExtension", "MyModule")
+        ext_type = DummyExtensionType(pa.float32(), DummyData, "MyPackage")
         ext_metadata = ext_type.__arrowbic_ext_metadata__()
 
         assert isinstance(ext_metadata, dict)
-        assert ext_metadata["extension_basename"] == "MyExtension"
-        assert ext_metadata["module_name"] == "MyModule"
+        assert ext_metadata["extension_basename"] == "DummyExtType"
+        assert ext_metadata["package_name"] == "MyPackage"
         assert ext_metadata["item_pyclass_name"] == "DummyData"
 
     def test__base_extension_type__arrow_ext_serialize__proper_json_encoding(self):
-        ext_type = BaseExtensionType(pa.float32(), DummyData, "MyExtension", "MyModule")
+        ext_type = DummyExtensionType(pa.float32(), DummyData, "MyPackage")
         ext_metadata = ext_type.__arrowbic_ext_metadata__()
         ext_serialized = ext_type.__arrow_ext_serialize__()
         assert json.loads(ext_serialized.decode()) == ext_metadata
