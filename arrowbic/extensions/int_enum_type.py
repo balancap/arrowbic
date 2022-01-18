@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pyarrow as pa
 
@@ -13,9 +13,11 @@ from arrowbic.core.utils import first_valid_item_in_iterable
 
 from .int_enum_array import IntEnumArray
 
+TItem = TypeVar("TItem", bound=Optional[IntEnum])
+
 
 @register_extension_type
-class IntEnumType(BaseExtensionType):
+class IntEnumType(BaseExtensionType[TItem]):
     """IntEnum Arrowbic extension type.
 
     This extension type enables the support in Arrowbic of standard Python IntEnum,
@@ -42,8 +44,8 @@ class IntEnumType(BaseExtensionType):
         if not is_valid_storage:
             raise TypeError(f"Invalid Arrow storage type for an IntEnum extension type: {storage_type}.")
 
-    def __arrow_ext_class__(self):
-        return IntEnumArray
+    def __arrow_ext_class__(self) -> Type[IntEnumArray[TItem]]:
+        return IntEnumArray[TItem]
 
     def __arrowbic_ext_metadata__(self) -> Dict[str, Any]:
         """Generate the IntEnum extension type metadata, with the full IntEnum
@@ -89,10 +91,10 @@ class IntEnumType(BaseExtensionType):
     @classmethod
     def __arrowbic_from_item_iterator__(
         cls,
-        it_items: Iterable[Optional[IntEnum]],
+        it_items: Iterable[Optional[TItem]],
         size: Optional[int] = None,
         registry: Optional[ExtensionTypeRegistry] = None,
-    ) -> IntEnumArray:
+    ) -> IntEnumArray[TItem]:
         """Build the IntEnum extension array from a Python item iterator.
 
         Args:

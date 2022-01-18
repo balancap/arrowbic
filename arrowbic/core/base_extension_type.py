@@ -1,11 +1,13 @@
 """Implementation of base extension type class used in Arrowbic.
 """
 import json
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Generic, Iterable, Optional, Type, TypeVar
 
 import pyarrow as pa
 
 from .base_extension_array import BaseExtensionArray
+
+TItem = TypeVar("TItem")
 
 
 def make_extension_name(extension_basename: str, package_name: str) -> str:
@@ -21,7 +23,7 @@ def make_extension_name(extension_basename: str, package_name: str) -> str:
     return extension_name
 
 
-class BaseExtensionType(pa.ExtensionType):
+class BaseExtensionType(pa.ExtensionType, Generic[TItem]):
     """Base class for all Arrowbic extension type.
 
     This class must be the parent class of any extension type registered in Arrowbic. It defines the standard
@@ -40,8 +42,8 @@ class BaseExtensionType(pa.ExtensionType):
 
     def __init__(
         self,
-        storage_type: Optional[pa.DataType],
-        item_pyclass: Optional[Type[Any]],
+        storage_type: Optional[pa.DataType] = None,
+        item_pyclass: Optional[Type[TItem]] = None,
         package_name: Optional[str] = None,
     ):
         self._package_name: str = package_name or "core"
@@ -68,7 +70,7 @@ class BaseExtensionType(pa.ExtensionType):
         return self._package_name
 
     @property
-    def item_pyclass(self) -> Optional[Type[Any]]:
+    def item_pyclass(self) -> Optional[Type[TItem]]:
         """Get the item Python class associated with the extension type.
 
         None if the extension type instance is a root instance.
@@ -136,8 +138,8 @@ class BaseExtensionType(pa.ExtensionType):
 
     @classmethod
     def __arrowbic_from_item_iterator__(
-        cls, it_items: Iterable[Any], size: Optional[int] = None, registry: Optional[Any] = None
-    ) -> BaseExtensionArray:
+        cls, it_items: Iterable[Optional[TItem]], size: Optional[int] = None, registry: Optional[Any] = None
+    ) -> BaseExtensionArray[TItem]:
         """Build the extension array from a Python item iterator.
 
         Args:
@@ -160,7 +162,7 @@ class BaseExtensionType(pa.ExtensionType):
         return json.dumps(ext_metadata).encode()
 
     @classmethod
-    def __arrow_ext_deserialize__(cls, storage_type: pa.DataType, serialized: bytes) -> "BaseExtensionType":
+    def __arrow_ext_deserialize__(cls, storage_type: pa.DataType, serialized: bytes) -> "BaseExtensionType[None]":
         """Deserialization of Arrowbic extension type based on the storage type and the metadata.
 
         Args:
