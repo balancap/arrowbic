@@ -78,6 +78,14 @@ class ExtensionTypeRegistry:
         self._item_pyclasses_cache[item_pyclass] = {pa.null(): root_ext_type}
         return root_ext_type
 
+    def unregister_item_pyclass(self, item_pyclass: Type[Any]):
+        """Unregister a Python item class from the registry.
+
+        Args:
+            item_pyclass: Item Python class to unregister.
+        """
+        self._item_pyclasses_cache.pop(item_pyclass)
+
     def find_extension_type(
         self, item_pyclass: Type[Any], storage_type: Optional[pa.DataType] = None
     ) -> BaseExtensionType:
@@ -190,3 +198,30 @@ def register_item_pyclass(
         return wrap
     # Called without parens.
     return wrap(item_pyclass)
+
+
+def unregister_item_pyclass(item_pyclass: Type[Any], *, registry: Optional[ExtensionTypeRegistry] = None):
+    """Unregister item Python class from the global Arrowbic registry."""
+    registry = registry or _global_registry
+    registry.unregister_item_pyclass(item_pyclass)
+
+
+def find_registry_extension_type(
+    item_pyclass: Type[Any],
+    storage_type: Optional[pa.DataType] = None,
+    *,
+    registry: Optional[ExtensionTypeRegistry] = None,
+):
+    """Find an extension type in the Arrowbic registry.
+
+    Args:
+        item_pyclass: Item Python class to find in the registry.
+        storage_type: Storage type to use for the extension type.
+        registry: Optional registry to use.
+    Returns:
+        Extension type from the registry.
+    Raises:
+        KeyError: If the item Python class was not found in the registry.
+    """
+    registry = registry or _global_registry
+    return registry.find_extension_type(item_pyclass, storage_type)

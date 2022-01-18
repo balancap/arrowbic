@@ -3,7 +3,12 @@ import unittest
 import pyarrow as pa
 
 from arrowbic.core.base_extension_type import BaseExtensionType
-from arrowbic.core.extension_type_registry import ExtensionTypeRegistry, register_extension_type, register_item_pyclass
+from arrowbic.core.extension_type_registry import (
+    ExtensionTypeRegistry,
+    find_registry_extension_type,
+    register_extension_type,
+    register_item_pyclass,
+)
 
 
 class DummyData:
@@ -140,3 +145,12 @@ class TestExtensionTypeRegistryBase(unittest.TestCase):
         ext_type = registry.register_item_pyclass(DummyData)
         assert isinstance(ext_type, DummyExtTypeBis)
         assert ext_type.extension_name == DummyExtTypeBis(None, None, "pkg").extension_name
+
+    def test__find_registry_extension_type__proper_ext_type(self):
+        registry = ExtensionTypeRegistry()
+        root_extension_type = DummyExtensionType(None, None, None)
+        registry.register_root_extension_type(root_extension_type)
+        registry.register_item_pyclass(DummyData)
+
+        ext_type = find_registry_extension_type(DummyData, registry=registry)
+        assert ext_type is root_extension_type
