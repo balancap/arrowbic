@@ -1,11 +1,13 @@
 """Implementation of base extension type class used in Arrowbic.
 """
 import json
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pyarrow as pa
 
 from .base_extension_array import BaseExtensionArray
+
+TItem = TypeVar("TItem")
 
 
 def make_extension_name(extension_basename: str, package_name: str) -> str:
@@ -136,8 +138,8 @@ class BaseExtensionType(pa.ExtensionType):
 
     @classmethod
     def __arrowbic_from_item_iterator__(
-        cls, it_items: Iterable[Any], size: Optional[int] = None, registry: Optional[Any] = None
-    ) -> BaseExtensionArray:
+        cls, it_items: Iterable[Optional[TItem]], size: Optional[int] = None, registry: Optional[Any] = None
+    ) -> BaseExtensionArray[TItem]:
         """Build the extension array from a Python item iterator.
 
         Args:
