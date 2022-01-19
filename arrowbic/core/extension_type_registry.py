@@ -1,11 +1,14 @@
 """Arrowbic extension type main registry implementation.
 """
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import pyarrow as pa
 
 from .base_extension_type import BaseExtensionType
+
+TItem = TypeVar("TItem")
+TExtType = TypeVar("TExtType", bound=BaseExtensionType)
 
 
 class ExtensionTypeRegistry:
@@ -78,7 +81,7 @@ class ExtensionTypeRegistry:
         self._item_pyclasses_cache[item_pyclass] = {pa.null(): root_ext_type}
         return root_ext_type
 
-    def unregister_item_pyclass(self, item_pyclass: Type[Any]):
+    def unregister_item_pyclass(self, item_pyclass: Type[Any]) -> None:
         """Unregister a Python item class from the registry.
 
         Args:
@@ -144,27 +147,27 @@ _global_registry = ExtensionTypeRegistry(sync_with_pyarrow=True)
 
 
 def register_extension_type(
-    extension_type_cls: Type[BaseExtensionType] = None,
+    extension_type_cls: Type[TExtType] = None,
     *,
     package_name: Optional[str] = None,
     registry: Optional[ExtensionTypeRegistry] = None,
-):
+) -> Callable[[Type[TExtType]], Type[TExtType]]:
     """Extension type class decorator: registering the extension type class in Arrowbic.
 
     Args:
         package_name: Optional package name to use in the extension name.
         registry: Registry to use. Global one by default.
     """
-    registry = registry or _global_registry
+    reg = registry if registry is not None else _global_registry
 
-    def wrap(_extension_type_cls):
+    def wrap(_extension_type_cls: Type[TExtType]) -> Type[TExtType]:
         # Build the default/root instance of the extension type.
         ext_type = _extension_type_cls(
             storage_type=None,
             item_pyclass=None,
             package_name=package_name,
         )
-        registry.register_root_extension_type(ext_type)
+        reg.register_root_extension_type(ext_type)
         return _extension_type_cls
 
     # Decorator called with parens: register_extension_type(...)
@@ -175,10 +178,10 @@ def register_extension_type(
 
 
 def register_item_pyclass(
-    item_pyclass: Type[Any] = None,
+    item_pyclass: Type[TItem] = None,
     *,
     registry: Optional[ExtensionTypeRegistry] = None,
-):
+) -> Union[Type[TItem], Callable[[Type[TItem]], Type[TItem]]]:
     """Item Python class decorator: registering the item Python class in Arrowbic.
 
     The Arrowbic registry is caching all extension type instances and the association to
@@ -187,10 +190,10 @@ def register_item_pyclass(
     Args:
         registry: Registry to use. Global one by default.
     """
-    registry = registry or _global_registry
+    reg = registry if registry is not None else _global_registry
 
-    def wrap(_item_cls):
-        registry.register_item_pyclass(_item_cls)
+    def wrap(_item_cls: Type[TItem]) -> Type[TItem]:
+        reg.register_item_pyclass(_item_cls)
         return _item_cls
 
     # Decorator called with parens: register_item_pyclass(...)
@@ -200,18 +203,18 @@ def register_item_pyclass(
     return wrap(item_pyclass)
 
 
-def unregister_item_pyclass(item_pyclass: Type[Any], *, registry: Optional[ExtensionTypeRegistry] = None):
+def unregister_item_pyclass(item_pyclass: Type[TItem], *, registry: Optional[ExtensionTypeRegistry] = None) -> None:
     """Unregister item Python class from the global Arrowbic registry."""
     registry = registry or _global_registry
     registry.unregister_item_pyclass(item_pyclass)
 
 
 def find_registry_extension_type(
-    item_pyclass: Type[Any],
+    item_pyclass: Type[TItem],
     storage_type: Optional[pa.DataType] = None,
     *,
     registry: Optional[ExtensionTypeRegistry] = None,
-):
+) -> BaseExtensionType:
     """Find an extension type in the Arrowbic registry.
 
     Args:
