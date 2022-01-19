@@ -2,7 +2,7 @@ import unittest
 from enum import IntEnum
 
 from arrowbic.core.extension_type_registry import register_item_pyclass, unregister_item_pyclass
-from arrowbic.extensions import IntEnumType
+from arrowbic.extensions import IntEnumArray
 
 
 class DummyIntEnum(IntEnum):
@@ -10,7 +10,7 @@ class DummyIntEnum(IntEnum):
     Valid = 2
 
 
-class TestIntEnumType(unittest.TestCase):
+class TestIntEnumArray(unittest.TestCase):
     def setUp(self) -> None:
         register_item_pyclass(DummyIntEnum)
 
@@ -19,7 +19,7 @@ class TestIntEnumType(unittest.TestCase):
 
     def test__int_enum_array__get_item__int_index__proper_result(self) -> None:
         values = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None, None]
-        arr = IntEnumType.__arrowbic_from_item_iterator__(values)
+        arr = IntEnumArray.from_iterator(values)
 
         assert arr[0] is None
         assert arr[1] == DummyIntEnum.Invalid
@@ -27,6 +27,6 @@ class TestIntEnumType(unittest.TestCase):
 
     def test__int_enum_array__iter__proper_result(self) -> None:
         values_in = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None, None]
-        arr = IntEnumType.__arrowbic_from_item_iterator__(values_in)
+        arr = IntEnumArray.from_iterator(values_in)
         values_out = list(arr)
         assert values_out == values_in

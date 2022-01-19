@@ -1,6 +1,6 @@
 """Implementation of base extension array class used in Arrowbic.
 """
-from typing import Any, Iterator, Optional, Sequence, TypeVar, Union, overload
+from typing import Any, Iterable, Iterator, Optional, Sequence, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -10,6 +10,11 @@ TArray = TypeVar("TArray", bound="BaseExtensionArray[Any]")
 
 class BaseExtensionArray(pa.ExtensionArray, Sequence[Optional[TItem]]):
     """Base extension array, adding interface to make simple operations easier."""
+
+    @classmethod
+    def __arrowbic_ext_type_class__(cls) -> Type[pa.ExtensionType]:
+        """Arrowbic extension type class associated with the extension array."""
+        raise NotImplementedError()
 
     def __arrowbic_getitem__(self, index: int) -> Optional[TItem]:
         """Arrowbic __getitem__ interface, to retrieve a single Python item in an array.
@@ -50,3 +55,20 @@ class BaseExtensionArray(pa.ExtensionArray, Sequence[Optional[TItem]]):
             return self.__arrowbic_getitem__(index)
         else:
             raise TypeError(f"Unsupported key type '{index}' in Arrowbic array __getitem__.")
+
+    @classmethod
+    def from_iterator(cls: Type[TArray], it_items: Iterable[Optional[TItem]], size: Optional[int] = None) -> TArray:
+        """Build the extension array from a Python item iterator.
+
+        Args:
+            it_items: Items Python iterable.
+            size: Optional size of the input iterable.
+            registry: Optional registry where to find the extension type.
+        Returns:
+            Extension array, with the proper data.
+        """
+        from .base_extension_type import BaseExtensionType
+
+        ext_type_cls: BaseExtensionType = cls.__arrowbic_ext_type_class__()  # type:ignore
+        arr = ext_type_cls.__arrowbic_from_item_iterator__(it_items, size=size)
+        return arr

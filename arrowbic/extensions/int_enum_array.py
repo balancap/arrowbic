@@ -1,12 +1,19 @@
-from typing import Optional, TypeVar
+from typing import Optional, Type, TypeVar
 
 from arrowbic.core.base_extension_array import BaseExtensionArray
+from arrowbic.core.base_extension_type import BaseExtensionType
 
 TItem = TypeVar("TItem")
 
 
 class IntEnumArray(BaseExtensionArray[TItem]):
     """IntEnum extension array."""
+
+    @classmethod
+    def __arrowbic_ext_type_class__(cls) -> Type[BaseExtensionType]:
+        from .int_enum_type import IntEnumType
+
+        return IntEnumType
 
     def __arrowbic_getitem__(self, index: int) -> Optional[TItem]:
         """Arrowbic __getitem__ interface, to retrieve a single IntEnum item in an array.

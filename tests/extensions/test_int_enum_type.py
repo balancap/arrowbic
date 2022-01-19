@@ -56,7 +56,7 @@ class TestIntEnumType(unittest.TestCase):
         assert isinstance(arr, IntEnumArray)
         assert isinstance(arr.type, IntEnumType)
         assert len(arr) == len(values)
-        assert arr.to_pylist() == values
+        assert list(arr) == values
 
     def test__int_enum_type__arrowbic_from_item_iterator__input_iterator(self) -> None:
         values = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None, None]
@@ -65,4 +65,4 @@ class TestIntEnumType(unittest.TestCase):
         assert isinstance(arr, IntEnumArray)
         assert isinstance(arr.type, IntEnumType)
         assert len(arr) == len(values) - 1
-        assert arr.to_pylist() == values[:-1]
+        assert list(arr) == values[:-1]

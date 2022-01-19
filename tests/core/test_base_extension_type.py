@@ -1,19 +1,45 @@
 import json
 import unittest
+from dataclasses import dataclass
+from typing import Any, Iterable, Optional, Type, TypeVar
 
 import pyarrow as pa
 
+from arrowbic.core.base_extension_array import BaseExtensionArray
 from arrowbic.core.base_extension_type import BaseExtensionType, make_extension_name
 
+TItem = TypeVar("TItem")
 
+
+@dataclass
 class DummyData:
-    pass
+    v: int = 0
 
 
 class DummyExtensionType(BaseExtensionType):
     @classmethod
     def __arrowbic_ext_basename__(cls) -> str:
         return "DummyExtType"
+
+    def __arrow_ext_class__(self) -> Type["DummyExtensionArray"]:
+        return DummyExtensionArray
+
+    @classmethod
+    def __arrowbic_from_item_iterator__(
+        cls, it_items: Iterable[Optional[TItem]], size: Optional[int] = None, registry: Optional[Any] = None
+    ) -> "DummyExtensionArray":
+        values = [item.v if isinstance(item, DummyData) else None for item in it_items]
+        ext_type = DummyExtensionType(pa.int64(), DummyData)
+        return pa.ExtensionArray.from_storage(ext_type, pa.array(values))
+
+
+class DummyExtensionArray(BaseExtensionArray[DummyData]):
+    @classmethod
+    def __arrowbic_ext_type_class__(cls) -> Type[DummyExtensionType]:
+        return DummyExtensionType
+
+    def __arrowbic_getitem__(self, index: int) -> Optional[DummyData]:
+        return DummyData(self.storage[index].as_py())
 
 
 def test__make_extension_name__proper_result() -> None:
