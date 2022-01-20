@@ -1,3 +1,5 @@
+"""IntEnum extension type in Arrowbic.
+"""
 from enum import IntEnum
 from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
@@ -35,14 +37,12 @@ class IntEnumType(BaseExtensionType):
         item_pyclass: Optional[Type[Any]] = None,
         package_name: Optional[str] = None,
     ):
-        storage_type = storage_type if storage_type is not None else pa.null()
         super().__init__(storage_type, item_pyclass, package_name)
-
         # Checking the storage type. TODO: make it valid with any integer type.
         # NOTE: PyArrow crashing if check before super().__init__(...)
-        is_valid_storage = storage_type == pa.null() or storage_type == pa.int64()
+        is_valid_storage = self.storage_type == pa.null() or self.storage_type == pa.int64()
         if not is_valid_storage:
-            raise TypeError(f"Invalid Arrow storage type for an IntEnum extension type: {storage_type}.")
+            raise TypeError(f"Invalid Arrow storage type for an IntEnum extension type: {self.storage_type}.")
 
     def __arrow_ext_class__(self) -> Type[IntEnumArray[Any]]:
         return IntEnumArray

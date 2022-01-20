@@ -151,7 +151,7 @@ def register_extension_type(
     *,
     package_name: Optional[str] = None,
     registry: Optional[ExtensionTypeRegistry] = None,
-) -> Callable[[Type[TExtType]], Type[TExtType]]:
+) -> Union[Type[TExtType], Callable[[Type[TExtType]], Type[TExtType]]]:
     """Extension type class decorator: registering the extension type class in Arrowbic.
 
     Args:

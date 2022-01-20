@@ -141,7 +141,7 @@ class TestExtensionTypeRegistryBase(unittest.TestCase):
     def test__register_extension_type__decorator_properly_working(self) -> None:
         registry = ExtensionTypeRegistry()
 
-        @register_extension_type(package_name="pkg", registry=registry)
+        @register_extension_type(package_name="pkg", registry=registry)  # type:ignore
         class DummyExtTypeBis(DummyExtensionType):
             pass
 
