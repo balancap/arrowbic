@@ -42,8 +42,8 @@ class BaseExtensionType(pa.ExtensionType):
 
     def __init__(
         self,
-        storage_type: Optional[pa.DataType],
-        item_pyclass: Optional[Type[Any]],
+        storage_type: Optional[pa.DataType] = None,
+        item_pyclass: Optional[Type[Any]] = None,
         package_name: Optional[str] = None,
     ):
         self._package_name: str = package_name or "core"
@@ -51,7 +51,7 @@ class BaseExtensionType(pa.ExtensionType):
 
         # Generate the full extension name for PyArrow extension registry.
         extension_name = make_extension_name(self.extension_basename, self._package_name)
-        storage_type = storage_type or pa.null()
+        storage_type = storage_type if storage_type is not None else pa.null()
         pa.ExtensionType.__init__(self, storage_type, extension_name)
 
     @property
