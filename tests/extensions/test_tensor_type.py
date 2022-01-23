@@ -42,8 +42,10 @@ class TestTensorType(unittest.TestCase):
 
         assert isinstance(arr, TensorArray)
         assert len(arr) == 4
+        assert arr.null_count == 2
         assert arr.type.storage_type[0].type == pa.list_(pa.float64(), -1)
         assert arr.type.storage_type[1].type == pa.list_(pa.int64(), -1)
+
         # None items in the storage.
         assert arr.storage.field(0)[0].as_py() is None
         assert arr.storage.field(1)[0].as_py() == []

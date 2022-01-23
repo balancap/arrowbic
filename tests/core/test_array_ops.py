@@ -4,8 +4,9 @@ from enum import IntEnum
 import numpy as np
 import pyarrow as pa
 
-from arrowbic.core.array_factory import array as ab_array
-from arrowbic.core.array_factory import asarray as ab_asarray
+from arrowbic.core.array_ops import array as ab_array
+from arrowbic.core.array_ops import asarray as ab_asarray
+from arrowbic.core.array_ops import get_pyitem
 from arrowbic.core.extension_type_registry import register_item_pyclass, unregister_item_pyclass
 from arrowbic.extensions import IntEnumArray
 
@@ -15,7 +16,7 @@ class DummyIntEnum(IntEnum):
     Valid = 2
 
 
-class TestIntEnumType(unittest.TestCase):
+class TestArrowbicArraysOps(unittest.TestCase):
     def setUp(self) -> None:
         register_item_pyclass(DummyIntEnum)
 
@@ -59,3 +60,16 @@ class TestIntEnumType(unittest.TestCase):
         arr_out = ab_asarray(arr_in)
         assert isinstance(arr_out, IntEnumArray)
         assert arr_out is arr_in
+
+    def test__get_pyitem__pyarrow_simple_array__proper_value(self) -> None:
+        arr = pa.array([None, 10, 3, None, 5])
+        assert isinstance(get_pyitem(arr, 1), int)
+        assert get_pyitem(arr, 1) == 10
+        assert get_pyitem(arr, 0) is None
+
+    def test__get_pyitem__arrowbic_array__proper_value(self) -> None:
+        values = [DummyIntEnum.Invalid, None, DummyIntEnum.Valid]
+        arr = ab_asarray(values)
+        assert isinstance(get_pyitem(arr, 0), DummyIntEnum)
+        assert get_pyitem(arr, 0) == DummyIntEnum.Invalid
+        assert get_pyitem(arr, 1) is None

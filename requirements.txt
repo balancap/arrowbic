@@ -1,2 +1,4 @@
+immutables
 numpy >= 1.21
 pyarrow >= 3
+typing_inspect

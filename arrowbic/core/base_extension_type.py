@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 import pyarrow as pa
 
 from .base_extension_array import BaseExtensionArray
+from .utils import as_immutable
 
 TItem = TypeVar("TItem")
 
@@ -82,6 +83,19 @@ class BaseExtensionType(pa.ExtensionType):
         """Get the item Python class name. None if no item class."""
         item_pyclass_name = self._item_pyclass.__name__ if self._item_pyclass is not None else None
         return item_pyclass_name
+
+    def __eq__(self, other: object) -> bool:
+        """Arrowbic extension type equality: if storage type is the same + metadata equal."""
+        return (
+            isinstance(other, type(self))
+            and (self.storage_type == other.storage_type)
+            and (self.__arrowbic_ext_metadata__() == other.__arrowbic_ext_metadata__())
+        )
+
+    def __hash__(self) -> int:
+        # Immutable extension metadata.
+        metadata = as_immutable(self.__arrowbic_ext_metadata__())
+        return hash((self.storage_type, metadata))
 
     # Arrowbic interface.
     def __arrowbic_ext_metadata__(self) -> Dict[str, Any]:

@@ -20,6 +20,9 @@ class TestTensorArray(unittest.TestCase):
 
         assert isinstance(arr, TensorArray)
         assert isinstance(arr[3], np.ndarray)
+        assert len(arr) == 4
+        assert arr.null_count == 2
+
         assert arr[3].shape == (3, 2)
         assert arr[3].tolist() == values[3]
 
@@ -29,6 +32,8 @@ class TestTensorArray(unittest.TestCase):
 
         assert isinstance(arr, TensorArray)
         assert len(arr) == 3
+        assert arr.null_count == 0
+
         assert arr.type.storage_type[0].type == pa.list_(pa.float32(), -1)
         assert arr.type.storage_type[1].type == pa.list_(pa.int64(), -1)
         # Proper data & shape.

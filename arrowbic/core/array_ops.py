@@ -1,6 +1,6 @@
 """Array factory method. Extending with PyArrow, and adding more typing.
 """
-from typing import Iterable, Optional, TypeVar
+from typing import Any, Iterable, Optional, TypeVar, overload
 
 import pyarrow as pa
 
@@ -50,3 +50,32 @@ def asarray(obj: Iterable[Optional[TItem]], size: Optional[int] = None) -> BaseE
     if isinstance(obj, pa.Array):
         return obj
     return array(obj, size=size)
+
+
+@overload
+def get_pyitem(arr: BaseExtensionArray[TItem], index: int) -> Optional[TItem]:
+    ...
+
+
+@overload
+def get_pyitem(arr: pa.StringArray, index: int) -> Optional[str]:
+    ...
+
+
+def get_pyitem(arr: pa.Array, index: int) -> Optional[Any]:
+    """Get the Python item object from an array at a given index.
+
+    This method is supporting Arrowbic extension arrays as well as PyArrow arrays.
+
+    Args:
+        arr: PyArrow or/and Arrowbic array.
+        index: Index of the item.
+    Returns:
+        Item (or None if null entry).
+    """
+    if isinstance(arr, BaseExtensionArray):
+        return arr[index]
+    elif isinstance(arr, pa.ExtensionArray):
+        return arr.storage[index].as_py()
+    else:
+        return arr[index].as_py()

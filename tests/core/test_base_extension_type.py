@@ -59,6 +59,16 @@ class TestBaseExtensionType(unittest.TestCase):
         ext_type = DummyExtensionType(pa.float32(), DummyData)
         assert ext_type.package_name == "core"
 
+    def test__base_extension_type__eq__proper_equality(self) -> None:
+        ext_type0 = DummyExtensionType(pa.float32(), DummyData)
+        assert ext_type0 == DummyExtensionType(pa.float32(), DummyData)
+        assert ext_type0 != DummyExtensionType(pa.int64(), DummyData)
+
+    def test__base_extension_type__hash__proper_equality(self) -> None:
+        ext_type0 = DummyExtensionType(pa.float32(), DummyData)
+        assert hash(ext_type0) == hash(DummyExtensionType(pa.float32(), DummyData))
+        assert hash(ext_type0) != hash(DummyExtensionType(pa.int64(), DummyData))
+
     def test__base_extension_type__arrowbic_ext_metadata__proper_result(self) -> None:
         ext_type = DummyExtensionType(pa.float32(), DummyData, "MyPackage")
         ext_metadata = ext_type.__arrowbic_ext_metadata__()

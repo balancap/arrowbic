@@ -30,3 +30,9 @@ class TestIntEnumArray(unittest.TestCase):
         arr = IntEnumArray.from_iterator(values_in)
         values_out = list(arr)
         assert values_out == values_in
+
+    def test__int_enum_array__to_pylist__proper_result(self) -> None:
+        values_in = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None, None]
+        arr = IntEnumArray.from_iterator(values_in)
+        values_out = arr.to_pylist()
+        assert values_out == values_in

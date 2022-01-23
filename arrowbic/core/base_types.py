@@ -1,8 +1,16 @@
-from typing import Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 import pyarrow as pa
 from numpy.typing import DTypeLike
+
+if TYPE_CHECKING:
+    # MyPy fails if not provided with the full annotation.
+    NdArrayGeneric = np.ndarray[Any, np.dtype[Any]]
+else:
+    # Full typing only supported in Python 3.9
+    NdArrayGeneric = np.ndarray
+
 
 _base_from_arrow_to_python_mapping: Dict[pa.DataType, DTypeLike] = {
     pa.null(): type(None),

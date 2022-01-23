@@ -108,18 +108,22 @@ class TensorType(BaseExtensionType):
         # Manually gathering the `data` and `shape` columns.
         arrays: List[Optional[NdArrayGeneric]] = []
         shapes: List[Any] = []
+        mask: List[bool] = []
         for v in it_items:
             if v is None:
                 arrays.append(None)
                 shapes.append([])
+                mask.append(True)
             else:
                 x = np.asarray(v)
                 arrays.append(np.ravel(x))
                 shapes.append(x.shape)
+                mask.append(False)
         # Build the raw Arrow columns + struct storage.
         data_arr = pa.array(arrays)
         shape_arr = pa.array(shapes, type=pa.list_(pa.int64(), -1))
-        return TensorArray.make_from_data_shape_arrays(data_arr, shape_arr, registry=registry)
+        mask_arr = pa.array(mask, type=pa.bool_())
+        return TensorArray.make_from_data_shape_arrays(data_arr, shape_arr, mask=mask_arr, registry=registry)
 
 
 # Register at least Numpy array types per default.

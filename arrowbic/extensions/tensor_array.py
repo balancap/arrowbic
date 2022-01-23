@@ -1,20 +1,14 @@
 """NdArray/Tensor array extension in Arrowbic.
 """
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Type, TypeVar
+from typing import Iterable, Optional, Type, TypeVar
 
 import numpy as np
 import pyarrow as pa
 
 from arrowbic.core.base_extension_array import BaseExtensionArray
 from arrowbic.core.base_extension_type import BaseExtensionType
+from arrowbic.core.base_types import NdArrayGeneric
 from arrowbic.core.extension_type_registry import ExtensionTypeRegistry, find_registry_extension_type
-
-if TYPE_CHECKING:
-    # MyPy fails if not provided with the full annotation.
-    NdArrayGeneric = np.ndarray[Any, np.dtype[Any]]
-else:
-    # Full typing only supported in Python 3.9
-    NdArrayGeneric = np.ndarray
 
 TItem = TypeVar("TItem")
 TArray = TypeVar("TArray", bound="TensorArray")
@@ -55,6 +49,7 @@ class TensorArray(BaseExtensionArray[NdArrayGeneric]):
         data_arr: pa.ListArray,
         shape_arr: pa.ListArray,
         *,
+        mask: Optional[pa.BooleanArray] = None,
         registry: Optional[ExtensionTypeRegistry] = None,
     ) -> TArray:
         """Build a Tensor extension array from raw data and shape Arrow arrays (as flat list).
@@ -62,12 +57,13 @@ class TensorArray(BaseExtensionArray[NdArrayGeneric]):
         Args:
             data_arr: Flat data Arrow array.
             shape_arr: Flat shape Arrow array.
+            mask: Optional boolean mask array.
             registry: Optional Arrowbic registry to use.
         Returns:
             Tensor extension array.
         """
-        storage_arr = pa.StructArray.from_arrays([data_arr, shape_arr], ["data", "shape"])
-        ext_tensor_type = find_registry_extension_type(np.ndarray, storage_arr.type)
+        storage_arr = pa.StructArray.from_arrays([data_arr, shape_arr], ["data", "shape"], mask=mask)
+        ext_tensor_type = find_registry_extension_type(np.ndarray, storage_arr.type, registry=registry)
         ext_tensor_arr = cls.from_storage(ext_tensor_type, storage_arr)
         return ext_tensor_arr
 
