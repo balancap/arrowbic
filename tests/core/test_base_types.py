@@ -2,7 +2,18 @@ import numpy as np
 import pyarrow as pa
 import pytest
 
-from arrowbic.core.base_types import from_arrow_to_numpy_dtype, from_arrow_to_python_class, from_numpy_to_arrow_type
+import arrowbic.extensions
+from arrowbic.core.base_types import (
+    from_arrow_to_numpy_dtype,
+    from_arrow_to_python_class,
+    from_numpy_to_arrow_type,
+    is_supported_base_type,
+)
+
+
+def test__is_supported_base_type__proper_result() -> None:
+    assert not is_supported_base_type(arrowbic.extensions.IntEnumType())
+    assert not is_supported_base_type(arrowbic.extensions.TensorType())
 
 
 def test__from_numpy_to_arrow_type__np_dtype__proper_coverage() -> None:

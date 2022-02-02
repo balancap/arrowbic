@@ -1,6 +1,6 @@
 """Implementation of base extension array class used in Arrowbic.
 """
-from typing import Any, Iterable, Iterator, Optional, Sequence, Type, TypeVar, Union, overload
+from typing import Any, Iterable, Iterator, List, Optional, Sequence, Type, TypeVar, Union, overload
 
 import pyarrow as pa
 
@@ -55,6 +55,14 @@ class BaseExtensionArray(pa.ExtensionArray, Sequence[Optional[TItem]]):
             return self.__arrowbic_getitem__(index)
         else:
             raise TypeError(f"Unsupported key type '{index}' in Arrowbic array __getitem__.")
+
+    def to_pylist(self) -> List[Optional[TItem]]:
+        """Convert to a list of Python items."""
+        return list(self)
+
+    def tolist(self) -> List[Optional[TItem]]:
+        """Convert to a list of Python items. Alias of `to_pylist`"""
+        return self.to_pylist()
 
     @classmethod
     def from_iterator(cls: Type[TArray], it_items: Iterable[Optional[TItem]], size: Optional[int] = None) -> TArray:
