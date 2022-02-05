@@ -1,6 +1,6 @@
 import copy
 import unittest
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 import pyarrow as pa
 
@@ -19,7 +19,7 @@ class TestIntEnumType(unittest.TestCase):
         self.registry = copy.deepcopy(_global_registry)
         self.registry.register_item_pyclass(DummyIntEnum)
 
-    def test__int_enum_type__root_extension_type(self) -> None:
+    def test__int_enum_type__init__root_extension_type(self) -> None:
         ext_type = IntEnumType()
         assert ext_type.extension_name == "arrowbic.core.int_enum"
         assert ext_type.item_pyclass_name is None
@@ -27,6 +27,21 @@ class TestIntEnumType(unittest.TestCase):
     def test__int_enum_type__init__storage_type_check(self) -> None:
         with self.assertRaises(TypeError):
             IntEnumType(pa.int32(), DummyIntEnum)
+
+    def test__int_enum_type__init__check_item_pyclass_is_int_enum(self) -> None:
+        class DummyEnum(Enum):
+            Invalid = 1
+
+        with self.assertRaises(TypeError):
+            IntEnumType(pa.int64(), DummyEnum)
+
+    def test__int_enum_type__init__check_item_pyclass_unique_values(self) -> None:
+        class DummyIntEnumBis(IntEnum):
+            Invalid = 1
+            Valid = 1
+
+        with self.assertRaises(ValueError):
+            IntEnumType(pa.int64(), DummyIntEnumBis)
 
     def test__int_enum_type__ext_metadata(self) -> None:
         ext_type = IntEnumType(pa.int64(), DummyIntEnum)

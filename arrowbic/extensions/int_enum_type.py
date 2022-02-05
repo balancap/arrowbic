@@ -1,6 +1,6 @@
 """IntEnum extension type in Arrowbic.
 """
-from enum import IntEnum
+from enum import IntEnum, unique
 from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pyarrow as pa
@@ -16,6 +16,23 @@ from arrowbic.core.utils import first_valid_item_in_iterable
 from .int_enum_array import IntEnumArray
 
 TItem = TypeVar("TItem")
+
+
+def _check_int_enum_item_pyclass(item_pyclass: Optional[Type[Any]]) -> None:
+    """Check an input Python class is a supported IntEnum Python class
+
+    Args:
+        item_pyclass: Item Python class.
+    Raises:
+        TypeError: if the input python class is not supported.
+        ValueError: if the IntEnum definition has duplicate values.
+    """
+    if item_pyclass is None:
+        return
+    if not issubclass(item_pyclass, IntEnum):
+        raise TypeError(f"The item Python class '{item_pyclass}' is supposed to be an IntEnum sub-class.")
+    # Make sure the definition is unique: otherwise, can not map properly to integer values.
+    unique(item_pyclass)
 
 
 @register_extension_type
@@ -46,6 +63,7 @@ class IntEnumType(BaseExtensionType):
         is_valid_storage = self.storage_type == pa.null() or self.storage_type == pa.int64()
         if not is_valid_storage:
             raise TypeError(f"Invalid Arrow storage type for an IntEnum extension type: {self.storage_type}.")
+        _check_int_enum_item_pyclass(item_pyclass)
 
     def __arrow_ext_class__(self) -> Type[IntEnumArray[Any]]:
         return IntEnumArray
