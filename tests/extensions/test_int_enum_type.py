@@ -1,9 +1,10 @@
+import copy
 import unittest
 from enum import IntEnum
 
 import pyarrow as pa
 
-from arrowbic.core.extension_type_registry import register_item_pyclass, unregister_item_pyclass
+from arrowbic.core.extension_type_registry import _global_registry
 from arrowbic.extensions import IntEnumArray, IntEnumType
 
 
@@ -14,10 +15,9 @@ class DummyIntEnum(IntEnum):
 
 class TestIntEnumType(unittest.TestCase):
     def setUp(self) -> None:
-        register_item_pyclass(DummyIntEnum)
-
-    def tearDown(self) -> None:
-        unregister_item_pyclass(DummyIntEnum)
+        # Start from the default global registry.
+        self.registry = copy.deepcopy(_global_registry)
+        self.registry.register_item_pyclass(DummyIntEnum)
 
     def test__int_enum_type__root_extension_type(self) -> None:
         ext_type = IntEnumType()
@@ -51,7 +51,7 @@ class TestIntEnumType(unittest.TestCase):
 
     def test__int_enum_type__arrowbic_from_item_iterator__input_list(self) -> None:
         values = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None]
-        arr = IntEnumType.__arrowbic_from_item_iterator__(values)
+        arr = IntEnumType.__arrowbic_from_item_iterator__(values, registry=self.registry)
 
         assert isinstance(arr, IntEnumArray)
         assert isinstance(arr.type, IntEnumType)
@@ -60,7 +60,7 @@ class TestIntEnumType(unittest.TestCase):
 
     def test__int_enum_type__arrowbic_from_item_iterator__input_iterator(self) -> None:
         values = [None, DummyIntEnum.Invalid, DummyIntEnum.Valid, None, None]
-        arr = IntEnumType.__arrowbic_from_item_iterator__(iter(values), size=4)
+        arr = IntEnumType.__arrowbic_from_item_iterator__(iter(values), size=4, registry=self.registry)
 
         assert isinstance(arr, IntEnumArray)
         assert isinstance(arr.type, IntEnumType)

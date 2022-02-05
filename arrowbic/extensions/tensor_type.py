@@ -41,6 +41,7 @@ class TensorType(BaseExtensionType):
         storage_type: Storage type to use for the Tensor type. Should be struct() or null().
         item_pyclass: Numpy array class to associate with the extension type.
         package_name: (Optional) package of the extension. `core` by default. Helps avoiding name collision.
+        registry: Optional Arrowbic registry (global one by default).
     """
 
     def __init__(
@@ -48,8 +49,10 @@ class TensorType(BaseExtensionType):
         storage_type: Optional[pa.DataType] = None,
         item_pyclass: Optional[Type[Any]] = None,
         package_name: Optional[str] = None,
+        *,
+        registry: Optional[ExtensionTypeRegistry] = None,
     ):
-        super().__init__(storage_type, item_pyclass, package_name)
+        super().__init__(storage_type, item_pyclass, package_name, registry=registry)
         # Checking the storage_type and item_pyclass.
         # NOTE: PyArrow crashing if check before super().__init__(...)
         _check_tensor_storage_type(self.storage_type)
@@ -90,6 +93,8 @@ class TensorType(BaseExtensionType):
     def __arrowbic_from_item_iterator__(
         cls,
         it_items: Iterable[Optional[TItem]],
+        /,
+        *,
         size: Optional[int] = None,
         registry: Optional[ExtensionTypeRegistry] = None,
     ) -> TensorArray:

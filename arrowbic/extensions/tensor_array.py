@@ -68,7 +68,14 @@ class TensorArray(BaseExtensionArray[NdArrayGeneric]):
         return ext_tensor_arr
 
     @classmethod
-    def from_iterator(cls: Type[TArray], it_items: Iterable[Optional[TItem]], size: Optional[int] = None) -> TArray:
+    def from_iterator(
+        cls: Type[TArray],
+        it_items: Iterable[Optional[TItem]],
+        /,
+        *,
+        size: Optional[int] = None,
+        registry: Optional[ExtensionTypeRegistry] = None,
+    ) -> TArray:
         """Build the extension array from a Python item iterator.
 
         Args:
@@ -78,7 +85,7 @@ class TensorArray(BaseExtensionArray[NdArrayGeneric]):
         Returns:
             Extension array, with the proper data.
         """
-        return super().from_iterator(it_items, size=size)  # type:ignore
+        return super().from_iterator(it_items, size=size, registry=registry)  # type:ignore
 
     @classmethod
     def from_tensor(cls: Type[TArray], arr: NdArrayGeneric) -> TArray:

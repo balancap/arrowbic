@@ -65,7 +65,14 @@ class BaseExtensionArray(pa.ExtensionArray, Sequence[Optional[TItem]]):
         return self.to_pylist()
 
     @classmethod
-    def from_iterator(cls: Type[TArray], it_items: Iterable[Optional[TItem]], size: Optional[int] = None) -> TArray:
+    def from_iterator(
+        cls: Type[TArray],
+        it_items: Iterable[Optional[TItem]],
+        /,
+        *,
+        size: Optional[int] = None,
+        registry: Optional[Any] = None,
+    ) -> TArray:
         """Build the extension array from a Python item iterator.
 
         Args:
@@ -78,5 +85,5 @@ class BaseExtensionArray(pa.ExtensionArray, Sequence[Optional[TItem]]):
         from .base_extension_type import BaseExtensionType
 
         ext_type_cls: BaseExtensionType = cls.__arrowbic_ext_type_class__()  # type:ignore
-        arr = ext_type_cls.__arrowbic_from_item_iterator__(it_items, size=size)
+        arr = ext_type_cls.__arrowbic_from_item_iterator__(it_items, size=size, registry=registry)
         return arr
