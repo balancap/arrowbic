@@ -1,3 +1,4 @@
+import copy
 import dataclasses
 import unittest
 from enum import IntEnum
@@ -8,11 +9,7 @@ import numpy.testing as npt
 import pyarrow as pa
 
 from arrowbic.core.base_types import NdArrayGeneric
-from arrowbic.core.extension_type_registry import (
-    find_registry_extension_type,
-    register_item_pyclass,
-    unregister_item_pyclass,
-)
+from arrowbic.core.extension_type_registry import _global_registry
 from arrowbic.extensions import DataclassArray, DataclassType
 from arrowbic.extensions.dataclass_type import _from_arrow_field_to_dataclass_field
 
@@ -32,12 +29,10 @@ class DummyData:
 
 class TestSimpleDataclassType(unittest.TestCase):
     def setUp(self) -> None:
-        register_item_pyclass(DummyIntEnum)
-        register_item_pyclass(DummyData)
-
-    def tearDown(self) -> None:
-        unregister_item_pyclass(DummyData)
-        unregister_item_pyclass(DummyIntEnum)
+        # Start from the default global registry.
+        self.registry = copy.deepcopy(_global_registry)
+        self.registry.register_item_pyclass(DummyIntEnum)
+        self.registry.register_item_pyclass(DummyData)
 
     def test__dataclass_type__root_extension_type__proper_properties(self) -> None:
         root_ext_type = DataclassType()
@@ -78,8 +73,8 @@ class TestSimpleDataclassType(unittest.TestCase):
     def test__dataclass_type__arrowbic_make_item_pyclass__proper_result(self) -> None:
         storage_type = pa.struct(
             {
-                "type": find_registry_extension_type(DummyIntEnum, pa.int64()),
-                "data": find_registry_extension_type(
+                "type": self.registry.find_extension_type(DummyIntEnum, pa.int64()),
+                "data": self.registry.find_extension_type(
                     np.ndarray, pa.struct({"data": pa.list_(pa.float32(), -1), "shape": pa.list_(pa.int64(), -1)})
                 ),
                 "score": pa.float32(),
@@ -106,7 +101,7 @@ class TestSimpleDataclassType(unittest.TestCase):
 
     def test__dataclass_type__from_arrow_field_to_dataclass_field__extension_type(self) -> None:
         name, pyclass, dc_field = _from_arrow_field_to_dataclass_field(
-            pa.field("field", find_registry_extension_type(DummyIntEnum, pa.int64()), nullable=True)
+            pa.field("field", self.registry.find_extension_type(DummyIntEnum, pa.int64()), nullable=True)
         )
         assert name == "field"
         assert pyclass is DummyIntEnum
@@ -114,7 +109,7 @@ class TestSimpleDataclassType(unittest.TestCase):
 
     def test__dataclass_type__from_iterator__none_only(self) -> None:
         values = [None, None, None, None]
-        arr: pa.NullArray = DataclassType.__arrowbic_from_item_iterator__(iter(values), size=3)
+        arr: pa.NullArray = DataclassType.__arrowbic_from_item_iterator__(iter(values), size=3, registry=self.registry)
 
         assert isinstance(arr, pa.NullArray)
         assert arr.type == pa.null()
@@ -125,7 +120,7 @@ class TestSimpleDataclassType(unittest.TestCase):
             DummyData(DummyIntEnum.Invalid, np.array([1, 2, 3]), 1.0, "name0"),
             DummyData(DummyIntEnum.Valid, np.array([4, 5, 6]), 2.0, "name1"),
         ]
-        arr = DataclassType.__arrowbic_from_item_iterator__(items)
+        arr = DataclassType.__arrowbic_from_item_iterator__(items, registry=self.registry)
 
         assert isinstance(arr, DataclassArray)
         assert isinstance(arr.type, DataclassType)
@@ -149,7 +144,7 @@ class TestSimpleDataclassType(unittest.TestCase):
             None,
             DummyData(DummyIntEnum.Valid, None, 3.0, "name2"),
         ]
-        arr = DataclassType.__arrowbic_from_item_iterator__(items)
+        arr = DataclassType.__arrowbic_from_item_iterator__(items, registry=self.registry)
 
         assert isinstance(arr, DataclassArray)
         assert arr.null_count == 2

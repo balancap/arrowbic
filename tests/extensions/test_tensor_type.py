@@ -1,12 +1,17 @@
+import copy
 import unittest
 
 import numpy as np
 import pyarrow as pa
 
+from arrowbic.core.extension_type_registry import _global_registry
 from arrowbic.extensions import TensorArray, TensorType
 
 
 class TestTensorType(unittest.TestCase):
+    def setUp(self) -> None:
+        self.registry = copy.deepcopy(_global_registry)
+
     def test__tensor_type__default_init__proper_type(self) -> None:
         ext_type = TensorType()
         assert ext_type.storage_type == pa.null()
@@ -38,7 +43,7 @@ class TestTensorType(unittest.TestCase):
 
     def test__tensor_type__arrowbic_from_iterator__list_of_list_input__proper_result(self) -> None:
         values = [None, [1, 2, 3], None, [[4.0, 5.0], [6.0, 7.0]]]
-        arr = TensorType.__arrowbic_from_item_iterator__(values)
+        arr = TensorType.__arrowbic_from_item_iterator__(values, registry=self.registry)
 
         assert isinstance(arr, TensorArray)
         assert len(arr) == 4
@@ -59,7 +64,7 @@ class TestTensorType(unittest.TestCase):
 
     def test__tensor_type__arrowbic_from_iterator__ndarray_input__proper_result(self) -> None:
         values = np.random.rand(3, 4, 5).astype(np.float32)
-        arr = TensorType.__arrowbic_from_item_iterator__(values)
+        arr = TensorType.__arrowbic_from_item_iterator__(values, registry=self.registry)
 
         assert isinstance(arr, TensorArray)
         assert len(arr) == 3

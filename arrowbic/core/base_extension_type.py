@@ -9,6 +9,7 @@ from .base_extension_array import BaseExtensionArray
 from .utils import as_immutable
 
 TItem = TypeVar("TItem")
+TExtType = TypeVar("TExtType", bound="BaseExtensionType")
 
 
 def make_extension_name(extension_basename: str, package_name: str) -> str:
@@ -39,6 +40,7 @@ class BaseExtensionType(pa.ExtensionType):
         storage_type: Storage type to use for this instance.
         item_pyclass: Item Python class to associate with the extension type.
         package_name: (Optional) package of the extension. `core` by default. Helps avoiding name collision.
+        registry: Optional Arrowbic registry (global one by default).
     """
 
     def __init__(
@@ -46,6 +48,8 @@ class BaseExtensionType(pa.ExtensionType):
         storage_type: Optional[pa.DataType] = None,
         item_pyclass: Optional[Type[Any]] = None,
         package_name: Optional[str] = None,
+        *,
+        registry: Optional[Any] = None,
     ):
         self._package_name: str = package_name or "core"
         self._item_pyclass = item_pyclass
@@ -96,6 +100,14 @@ class BaseExtensionType(pa.ExtensionType):
         # Immutable extension metadata.
         metadata = as_immutable(self.__arrowbic_ext_metadata__())
         return hash((self.storage_type, metadata))
+
+    def __copy__(self: TExtType) -> TExtType:
+        # Default implementation of Arrowbic extension type.
+        return type(self)(self.storage_type, self.item_pyclass, self.package_name)
+
+    def __deepcopy__(self: TExtType, memo: Any) -> TExtType:
+        # Deep copy equivalent to copy by default.
+        return self.__copy__()
 
     # Arrowbic interface.
     def __arrowbic_ext_metadata__(self) -> Dict[str, Any]:
@@ -152,7 +164,7 @@ class BaseExtensionType(pa.ExtensionType):
 
     @classmethod
     def __arrowbic_from_item_iterator__(
-        cls, it_items: Iterable[Optional[TItem]], size: Optional[int] = None, registry: Optional[Any] = None
+        cls, it_items: Iterable[Optional[TItem]], /, *, size: Optional[int] = None, registry: Optional[Any] = None
     ) -> BaseExtensionArray[TItem]:
         """Build the extension array from a Python item iterator.
 

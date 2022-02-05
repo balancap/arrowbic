@@ -1,3 +1,4 @@
+import copy
 import json
 import unittest
 from dataclasses import dataclass
@@ -68,6 +69,14 @@ class TestBaseExtensionType(unittest.TestCase):
         ext_type0 = DummyExtensionType(pa.float32(), DummyData)
         assert hash(ext_type0) == hash(DummyExtensionType(pa.float32(), DummyData))
         assert hash(ext_type0) != hash(DummyExtensionType(pa.int64(), DummyData))
+
+    def test__base_extension_type__copy__proper_copy_ext_type(self) -> None:
+        ext_type0 = DummyExtensionType(pa.float32(), DummyData)
+        ext_type1 = copy.copy(ext_type0)
+
+        assert ext_type1 is not ext_type0
+        assert ext_type1 == ext_type0
+        assert hash(ext_type1) == hash(ext_type0)
 
     def test__base_extension_type__arrowbic_ext_metadata__proper_result(self) -> None:
         ext_type = DummyExtensionType(pa.float32(), DummyData, "MyPackage")
