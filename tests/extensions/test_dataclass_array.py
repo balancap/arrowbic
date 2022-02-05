@@ -6,6 +6,7 @@ import numpy.testing as npt
 import pyarrow as pa
 
 from arrowbic.core.extension_type_registry import _global_registry
+from arrowbic.core.utils import get_validity_array
 from arrowbic.extensions import DataclassArray
 from arrowbic.extensions.tensor_array import TensorArray
 
@@ -67,3 +68,36 @@ class TestDataclassArray(unittest.TestCase):
         assert isinstance(arr.data, TensorArray)
         assert isinstance(arr.score, pa.FloatingPointArray)
         assert isinstance(arr.name, pa.StringArray)
+
+    def test__dataclass_array__replace__no_inputs__return_same(self) -> None:
+        items = [
+            DummyData(DummyIntEnum.Invalid, np.array([1, 2, 3]), None, "name0"),
+            DummyData(DummyIntEnum.Valid, None, 3.0, "name2"),
+        ]
+        arr_in = DataclassArray.from_iterator(items, registry=self.registry)
+        arr_out = arr_in.replace()
+        assert arr_out is arr_in
+
+    def test__dataclass_array__replace__invalid_input_keys(self) -> None:
+        items = [
+            DummyData(DummyIntEnum.Invalid, np.array([1, 2, 3]), None, "name0"),
+            DummyData(DummyIntEnum.Valid, None, 3.0, "name2"),
+        ]
+        arr_in = DataclassArray.from_iterator(items, registry=self.registry)
+        with self.assertRaises(KeyError):
+            arr_in.replace(test=np.array([1, 2]))
+
+    def test__dataclass_array__replace__proper_fields_update(self) -> None:
+        items = [
+            None,
+            DummyData(DummyIntEnum.Invalid, np.array([1, 2, 3]), None, "name0"),
+            DummyData(DummyIntEnum.Valid, None, 3.0, "name2"),
+        ]
+        arr_in = DataclassArray.from_iterator(items, registry=self.registry)
+        arr_out = arr_in.replace(score=np.array([4.0, 5.0, 6.0]), type=[DummyIntEnum.Invalid, DummyIntEnum.Valid, None])
+
+        assert len(arr_out) == len(arr_in)
+        assert get_validity_array(arr_out).to_pylist() == [False, True, True]  # type:ignore
+        assert arr_out.type is arr_in.type
+        assert arr_out.score.to_pylist() == [4.0, 5.0, 6.0]
+        assert arr_out.storage.field(0).to_pylist() == [4.0, 5.0, 6.0]

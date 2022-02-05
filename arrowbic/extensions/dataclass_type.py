@@ -192,6 +192,6 @@ class DataclassType(BaseExtensionType):
         storage_arr = pa.StructArray.from_arrays(list(field_arrays.values()), fields=aw_field_infos, mask=mask)
 
         # Build the extension array, using registry extension type cache if existing.
-        ext_tensor_type = find_registry_extension_type(type(first_item), storage_arr.type, registry=registry)
-        ext_tensor_arr = DataclassArray.from_storage(ext_tensor_type, storage_arr)
-        return ext_tensor_arr
+        ext_dc_type = find_registry_extension_type(type(first_item), storage_arr.type, registry=registry)
+        ext_dc_arr = DataclassArray.from_storage(ext_dc_type, storage_arr)
+        return ext_dc_arr

@@ -2,6 +2,7 @@ import itertools
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TypeVar, overload
 
 import immutables
+import pyarrow as pa
 
 from .base_types import NdArrayGeneric
 
@@ -47,6 +48,21 @@ def first_valid_item_in_iterable(it_items: Iterable[Optional[T]]) -> Tuple[int, 
             return (idx, v, it_items)
         idx += 1
     return (idx, None, consumed_values)
+
+
+def get_validity_array(arr: pa.Array) -> Optional[pa.BooleanArray]:
+    """Get the validity/null bitmap array from any PyArrow array. Returns None if none
+    allocated.
+
+    Args:
+        arr: Any PyArrow array.
+    Returns:
+        Boolean validity array (if existing).
+    """
+    validity_buffer = arr.buffers()[0]
+    if validity_buffer is None:
+        return None
+    return pa.BooleanArray.from_buffers(pa.bool_(), len(arr), [None, validity_buffer], offset=arr.offset)
 
 
 @overload
