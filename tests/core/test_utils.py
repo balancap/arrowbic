@@ -1,6 +1,7 @@
 import immutables
+import pyarrow as pa
 
-from arrowbic.core.utils import as_immutable, first_valid_item_in_iterable
+from arrowbic.core.utils import as_immutable, first_valid_item_in_iterable, get_validity_array
 
 
 def test__first_valid_item_in_iterable__list__proper_result() -> None:
@@ -42,3 +43,24 @@ def test__as_immutable__list_input() -> None:
 
 def test__as_immutable__dict_input() -> None:
     assert as_immutable({1: "1", 2: "2"}) == immutables.Map({1: "1", 2: "2"})
+
+
+def test__get_validity_array__no_validity_bitmap() -> None:
+    arr = pa.array([1, 2, 3])
+    assert get_validity_array(arr) is None
+
+
+def test__get_validity_array__direct_buffer_mapping() -> None:
+    arr = pa.array([1, None, 2, 3, None])
+    val_arr: pa.BooleanArray = get_validity_array(arr)
+    assert val_arr.type == pa.bool_()
+    assert len(val_arr) == 5
+    assert val_arr.to_pylist() == [True, False, True, True, False]
+
+
+def test__get_validity_array__offset_buffer_mapping() -> None:
+    arr = pa.array([1, None, 2, 3, None])
+    val_arr: pa.BooleanArray = get_validity_array(arr[1:])
+    assert val_arr.type == pa.bool_()
+    assert len(val_arr) == 4
+    assert val_arr.to_pylist() == [False, True, True, False]
